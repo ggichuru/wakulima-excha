@@ -1,71 +1,61 @@
 import UssdMenu from 'ussd-builder'
 
-class UssdClass {
+type UssOption = (a: UssdClass) => void
+
+export class UssdClass {
     menu: UssdMenu
+    private swappingStates: any
 
-    constructor() {
+    constructor(...options: UssOption[]) {
+        // Set defaults
         this.menu = new UssdMenu({ provider: 'africasTalking' })
-    }
 
-    async defineStartState() {
-        try {
-            return this.menu.startState({
-                run: () => {
-                    this.menu.con(
-                        `Welcome to MARAFUND SWAP. Choose an option:` +
-                            `\n1. Continue to Swap` +
-                            '\n2. Exit'
-                    )
-                },
-                next: {
-                    '1': 'swapPage',
-                    '2': 'exit',
-                },
-            })
-        } catch (error) {
-            return {
-                success: false,
-                error,
-            }
+        this.swappingStates = null
+
+        // Set options
+        for (const option of options) {
+            option(this)
         }
     }
 
-    async defineExitState() {
-        try {
-            return this.menu.state('exit', {
-                run: () => {
-                    this.menu.end(
-                        'Sad to see you leave. \n Thank you using MARAFUND SWAP'
-                    )
-                },
-            })
-        } catch (error) {
-            return {
-                success: false,
-                error,
-            }
+    private async defineStartState() {
+        return this.menu.startState({
+            run: () => {
+                this.menu.con(
+                    `Welcome to MARAFUND SWAP. Choose an option:` +
+                        `\n1. Continue to Swap` +
+                        '\n2. Exit'
+                )
+            },
+            next: {
+                '1': 'swapPage',
+                '2': 'exit',
+            },
+        })
+    }
+
+    private async defineExitState() {
+        return this.menu.state('exit', {
+            run: () => {
+                this.menu.end(
+                    'Sad to see you leave. \n Thank you using MARAFUND SWAP'
+                )
+            },
+        })
+    }
+
+    public static async initSwappingStates(): Promise<UssOption> {
+        return (ussd: UssdClass): void => {
+            // Define initialization and exit states
+            ussd.defineStartState()
+            ussd.defineExitState()
+
+            // OTHER STATES
+            ussd.defineSwapPageState()
         }
     }
 
-    async swappingStates() {
-        try {
-            // Set up start state
-            await this.defineStartState()
-
-            // Set up exit state
-            await this.defineExitState()
-
-            // set up swapPage state
-            await this.defineSwapPageState()
-        } catch (error) {
-            return {
-                success: false,
-                error,
-            }
-        }
-    }
-
-    async defineSwapPageState() {
+    private async defineSwapPageState() {
         try {
             await this.menu.state('swapPage', {
                 run: () => {
@@ -86,5 +76,3 @@ class UssdClass {
         }
     }
 }
-
-export const ussdClass = new UssdClass()

@@ -1,11 +1,12 @@
 import { Router } from 'express'
-import { ussdClass } from '../ussd/uss.class'
+import { UssdClass } from '../ussd/uss.class'
 
 const router = Router()
 
 router.post('/', async (req: any, res: any) => {
     try {
-        await ussdClass.swappingStates()
+        // initialize USSD Class
+        const ussdClass = new UssdClass(await UssdClass.initSwappingStates())
 
         await ussdClass.menu.run(req.body, (resMsg: any) => {
             res.send(resMsg)
