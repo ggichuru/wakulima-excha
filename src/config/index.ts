@@ -14,13 +14,13 @@ export const config = {
     },
     NODES: {
         ETHEREUM: {
-            MAINNET: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY!}`,
-            GOERLI: `https://goerli.infura.io/v3/${process.env.INFURA_KEY!}`,
+            MAINNET: `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_KEY!}`,
+            GOERLI: `wss://goerli.infura.io/ws/v3/${process.env.INFURA_KEY!}`,
         },
         POLYGON: {
-            MAINNET: `https://polygon-mainnet.infura.io/v3/${process.env
+            MAINNET: `wss://polygon-mainnet.infura.io/ws/v3/${process.env
                 .INFURA_KEY!}`,
-            MUMBAI: `https://polygon-mumbai.infura.io/v3/${process.env
+            MUMBAI: `wss://polygon-mumbai.infura.io/ws/v3/${process.env
                 .INFURA_KEY!}`,
         },
     },

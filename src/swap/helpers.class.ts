@@ -6,10 +6,14 @@ import { Account } from './account.class'
 export class Helpers extends Account {
     public async getAmountOutMin(amountIn: BigNumber, path: string[]) {
         try {
+            console.log('YOO', path)
+            // console.log(this.account)
             let amountOut = await this.routerContract.getAmountsOut(
-                amountIn,
+                100000,
                 path
             )
+            console.log('YAAAY', amountOut)
+
             return amountOut[1].mul(config.SLIPPAGE).div(100)
         } catch (error) {
             console.log('Get AmountOutMin error \n', error)

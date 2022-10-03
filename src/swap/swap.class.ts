@@ -3,13 +3,13 @@ import { config } from '../config'
 import { Helpers } from './helpers.class'
 
 class Swap extends Helpers {
-    public async executeBuy(tokenAddress: string, amount: number) {
+    public async executeBuy(tokenAddress: string, amount: BigNumber) {
         try {
-            let _amount = ethers.BigNumber.from(amount)
+            // let _amount = ethers.BigNumber.from(amount)
             let path = [config.TOKENS.WETH, tokenAddress]
 
-            let _amountOutMin = await this.getAmountOutMin(_amount, path)
-            let amountOutMin = parseInt(_amountOutMin._hex!)
+            // let _amountOutMin = amount
+            let amountOutMin = amount
 
             console.log('BUY AMOUNT = ', amountOutMin)
 
@@ -21,7 +21,7 @@ class Swap extends Helpers {
             let deadline = this.deadline
 
             let txResponse = await this.routerContract.swapExactETHForTokens(
-                _amountOutMin,
+                amountOutMin,
                 path,
                 this.toWallet,
                 deadline,
@@ -52,9 +52,9 @@ class Swap extends Helpers {
         }
     }
 
-    public async executeSell(tokenAddress: string, amount: number) {
+    public async executeSell(tokenAddress: string, amount: BigNumber) {
         try {
-            let _amount = ethers.BigNumber.from(amount)
+            // let _amount = ethers.BigNumber.from(amount)
             let path = [tokenAddress, config.TOKENS.WETH]
 
             let deadline = this.deadline
@@ -65,7 +65,7 @@ class Swap extends Helpers {
             console.log('Token balance ', tokenBalance)
 
             if (tokenBalance > 1) {
-                let _amountIn = _tokenBalance?.mul(_amount).div(100)
+                let _amountIn = _tokenBalance?.mul(amount).div(100)
                 let amountIn = parseInt(_amountIn?._hex!)
 
                 let _amountOutMin = await this.getAmountOutMin(_amountIn!, path)
@@ -142,3 +142,5 @@ class Swap extends Helpers {
         }
     }
 }
+
+export const swap = new Swap()

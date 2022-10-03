@@ -13,7 +13,7 @@ export class Account {
 
     constructor() {
         // define the provider
-        this.provider = new providers.JsonRpcProvider(
+        this.provider = new providers.WebSocketProvider(
             config.NODES.ETHEREUM.GOERLI
         )
 
