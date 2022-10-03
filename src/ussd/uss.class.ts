@@ -3,8 +3,8 @@ import UssdMenu from 'ussd-builder'
 type UssOption = (a: UssdClass) => void
 
 export class UssdClass {
-    menu: UssdMenu
     private swappingStates: any
+    menu: UssdMenu
 
     constructor(...options: UssOption[]) {
         // Set defaults
@@ -44,17 +44,6 @@ export class UssdClass {
         })
     }
 
-    public static async initSwappingStates(): Promise<UssOption> {
-        return (ussd: UssdClass): void => {
-            // Define initialization and exit states
-            ussd.defineStartState()
-            ussd.defineExitState()
-
-            // OTHER STATES
-            ussd.defineSwapPageState()
-        }
-    }
-
     private async defineSwapPageState() {
         try {
             await this.menu.state('swapPage', {
@@ -64,7 +53,7 @@ export class UssdClass {
                             `\n1. List Wallet holdings` +
                             `\n2. Swap Tokens` +
                             `\n3. Three` +
-                            `\n4. Four`
+                            `\n0. Exit`
                     )
                 },
             })
@@ -73,6 +62,17 @@ export class UssdClass {
                 success: false,
                 error,
             }
+        }
+    }
+
+    public static async initSwappingStates(): Promise<UssOption> {
+        return (ussd: UssdClass): void => {
+            // Define initialization and exit states
+            ussd.defineStartState()
+            ussd.defineExitState()
+
+            // OTHER STATES
+            ussd.defineSwapPageState()
         }
     }
 }
