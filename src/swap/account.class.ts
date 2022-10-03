@@ -3,7 +3,7 @@ import { config } from '../config'
 import { abis } from '../utils'
 
 export class Account {
-    private provider: ethers.providers.JsonRpcProvider
+    provider: ethers.providers.JsonRpcProvider
     private signer: Wallet
     toWallet: string
     deadline: number

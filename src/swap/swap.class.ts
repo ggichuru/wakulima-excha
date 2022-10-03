@@ -1,20 +1,21 @@
 import { BigNumber, ethers } from 'ethers'
 import { config } from '../config'
 import { Helpers } from './helpers.class'
+import { WETH, ChainId } from '@uniswap/sdk'
 
 class Swap extends Helpers {
-    public async executeBuy(tokenAddress: string, amount: BigNumber) {
+    public async executeBuy(tokenAddress: string, amount: string) {
         try {
-            // let _amount = ethers.BigNumber.from(amount)
-            let path = [config.TOKENS.WETH, tokenAddress]
+            // TODO: FIX GET AMOUNTS  OUT MIN
 
-            // let _amountOutMin = amount
-            let amountOutMin = amount
+            let unitEther = Math.pow(10, 18)
+            let path = [WETH[ChainId.GÖRLI].address, tokenAddress]
 
-            console.log('BUY AMOUNT = ', amountOutMin)
+            let _amount = unitEther * parseFloat(amount)
+            let amountOutMin = BigNumber.from(`${_amount}`)
 
             let overloads = {
-                value: amount,
+                value: amountOutMin,
                 gasLimit: config.DEFAULT_GAS_LIMIT,
             }
 
@@ -33,7 +34,7 @@ class Swap extends Helpers {
             let tx = await txResponse.wait()
 
             if (tx && tx.status == 1) {
-                console.log('SUCCESS, ', tx)
+                console.log('TRANSACTION SUCCESSFFUL : \t', tx.transactionHash)
 
                 try {
                     // Approve to spend max amount
@@ -45,7 +46,7 @@ class Swap extends Helpers {
                     console.log('Error Apporoving token \n', error)
                 }
             } else {
-                console.log('TRANSACTION UNSUCCESSFUL, \n', tx)
+                console.log('TRANSACTION UNSUCCESSFUL, \n')
             }
         } catch (error) {
             console.error('Execute Buy Error: \n', error)
