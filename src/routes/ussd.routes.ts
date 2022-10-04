@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { UssdClass } from '../ussd/uss.class'
+import { UssdClass } from '../ussd/ussd.class'
 
 const router = Router()
 

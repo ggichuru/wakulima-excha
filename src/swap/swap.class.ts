@@ -6,13 +6,24 @@ import { WETH, ChainId } from '@uniswap/sdk'
 class Swap extends Helpers {
     public async executeBuy(tokenAddress: string, amount: string) {
         try {
-            // TODO: FIX GET AMOUNTS  OUT MIN
-
+            console.info(
+                '****'.repeat(15),
+                '\n',
+                `INITIALIZE SWAP ETH FOR TOKENS \n`,
+                '****'.repeat(15)
+            )
             let unitEther = Math.pow(10, 18)
             let path = [WETH[ChainId.GÖRLI].address, tokenAddress]
 
-            let _amount = unitEther * parseFloat(amount)
-            let amountOutMin = BigNumber.from(`${_amount}`)
+            let _amount = `${unitEther * parseFloat(amount)}`
+            let _amountOutMin = BigNumber.from(`${_amount}`)
+
+            let amountOutMin = await this.getAmountOutMin(_amountOutMin, path)
+
+            console.log(_amountOutMin.toString())
+            // process.exit(0)
+
+            // TODO: CHECK ON AMOUNT OUT MIN
 
             let overloads = {
                 value: amountOutMin,
@@ -29,12 +40,10 @@ class Swap extends Helpers {
                 overloads
             )
 
-            console.log('Buy TX Response => ', txResponse)
-
             let tx = await txResponse.wait()
 
             if (tx && tx.status == 1) {
-                console.log('TRANSACTION SUCCESSFFUL : \t', tx.transactionHash)
+                console.log('BUY SUCCESSFFUL : \t', tx.transactionHash)
 
                 try {
                     // Approve to spend max amount
@@ -53,36 +62,44 @@ class Swap extends Helpers {
         }
     }
 
-    public async executeSell(tokenAddress: string, amount: BigNumber) {
+    public async executeSell(tokenAddress: string, _amount: string) {
         try {
-            // let _amount = ethers.BigNumber.from(amount)
-            let path = [tokenAddress, config.TOKENS.WETH]
+            console.info(
+                '****'.repeat(15),
+                '\n',
+                `INITIALIZE SWAP TOKENS FOR ETH \n`,
+                '****'.repeat(15)
+            )
+            let { decimals } = await this.getTokenInfo(tokenAddress)
+            let unitToken = Math.pow(10, decimals)
+
+            let path = [tokenAddress, WETH[ChainId.GÖRLI].address]
 
             let deadline = this.deadline
+
+            let amount = BigNumber.from(`${unitToken * parseFloat(_amount)}`)
 
             let _tokenBalance = await this.getTokenBalance(tokenAddress)
             let tokenBalance = parseInt(_tokenBalance?._hex!)
 
-            console.log('Token balance ', tokenBalance)
-
             if (tokenBalance > 1) {
-                let _amountIn = _tokenBalance?.mul(amount).div(100)
+                let _amountIn = amount
                 let amountIn = parseInt(_amountIn?._hex!)
 
-                let _amountOutMin = await this.getAmountOutMin(_amountIn!, path)
+                let _amountOutMin = await this.getAmountOutMin(amount, path)
                 let amountOutMin = parseInt(_amountOutMin?._hex!)
 
                 console.log(
-                    `Sell amountIn: ${amountIn} \n Sell amountOutMin: ${amountOutMin}`
+                    `Sell amountIn: ${amountIn} \t Sell amountOutMin: ${amountOutMin} \n`
                 )
 
                 let overloads = {
                     gasLimit: config.DEFAULT_GAS_LIMIT,
                 }
 
-                let allowance = await this.getTokenAllowance(tokenAddress)
+                let _allowance = await this.getTokenAllowance(tokenAddress)
 
-                if (allowance?.lt(amountIn)) {
+                if (_allowance!.lt(BigNumber.from(amount))) {
                     try {
                         let txResponse = await this.tokenContract(
                             tokenAddress
@@ -112,29 +129,29 @@ class Swap extends Helpers {
                         overloads
                     )
 
-                console.log('INIT executeSell TX')
+                console.log(' ...... \t loading')
                 let tx = await txResponse.wait()
-                console.log('executeSell TX done')
 
                 if (tx && tx.status == 1) {
                     console.info(
-                        '----'.repeat(10),
-                        `\nSELL SUCCESSFUL \n`,
-                        tx,
-                        '----'.repeat(10)
+                        '----'.repeat(20),
+                        '\n',
+                        `SELL SUCCESSFUL \t ${tx.transactionHash} \n`,
+                        '----'.repeat(20)
                     )
                 } else {
                     console.info(
-                        '----'.repeat(10),
-                        `\nSELL FAILED \n`,
-                        tx,
-                        '----'.repeat(10)
+                        '----'.repeat(20),
+                        '\n',
+                        `SELL FAILED \t ${tx.transactionHash} \n`,
+                        '----'.repeat(20)
                     )
                 }
             } else {
                 console.info(
                     '----'.repeat(10),
-                    `\nToken balance is ${tokenBalance}, thus insufficient \n`,
+                    '\n',
+                    `Token balance is ${tokenBalance}, thus insufficient \n`,
                     '----'.repeat(10)
                 )
             }

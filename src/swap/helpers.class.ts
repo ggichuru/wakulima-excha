@@ -6,13 +6,10 @@ import { Account } from './account.class'
 export class Helpers extends Account {
     public async getAmountOutMin(amountIn: BigNumber, path: string[]) {
         try {
-            console.log('YOO', path)
-            // console.log(this.account)
             let amountOut = await this.routerContract.getAmountsOut(
                 100000,
                 path
             )
-            console.log('YAAAY', amountOut)
 
             return amountOut[1].mul(config.SLIPPAGE).div(100)
         } catch (error) {
@@ -47,5 +44,19 @@ export class Helpers extends Account {
 
     public tokenContract(tokenAddress: string) {
         return new Contract(tokenAddress, abis.Erc20.abi, this.account)
+    }
+
+    public async getTokenInfo(tokenAddress: string) {
+        let contract = await this.tokenContract(tokenAddress)
+
+        let symbol = await contract.symbol()
+        let decimals = await contract.decimals()
+        let name = await contract.name()
+
+        return {
+            symbol,
+            decimals,
+            name,
+        }
     }
 }
