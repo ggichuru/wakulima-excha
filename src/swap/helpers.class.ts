@@ -4,10 +4,13 @@ import { abis } from '../utils'
 import { Account } from './account.class'
 
 export class Helpers extends Account {
-    public async getAmountOutMin(amountIn: BigNumber, path: string[]) {
+    public async getAmountOutMin(
+        amountIn: BigNumber,
+        path: string[]
+    ): Promise<BigNumber | undefined> {
         try {
             let amountOut = await this.routerContract.getAmountsOut(
-                100000,
+                amountIn,
                 path
             )
 
@@ -43,7 +46,7 @@ export class Helpers extends Account {
     }
 
     public tokenContract(tokenAddress: string) {
-        return new Contract(tokenAddress, abis.Erc20.abi, this.account)
+        return new Contract(tokenAddress, abis.Erc20.abi, this.provider)
     }
 
     public async getTokenInfo(tokenAddress: string) {
@@ -59,4 +62,6 @@ export class Helpers extends Account {
             name,
         }
     }
+
+    public async checkPathExist(tokenA: string, tokenB: string) {}
 }

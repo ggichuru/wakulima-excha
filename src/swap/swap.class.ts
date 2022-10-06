@@ -159,6 +159,112 @@ class Swap extends Helpers {
             console.error('Execute Sell Error: \n', error)
         }
     }
+
+    public async swap(
+        tokenA: string,
+        tokenB: string,
+        to: string,
+        amount: string
+    ) {
+        try {
+            console.info(
+                '****'.repeat(15),
+                '\n',
+                `INITIALIZE SWAP EXACT TOKENS FOR TOKENS \n`,
+                '****'.repeat(15)
+            )
+
+            let { decimals } = await this.getTokenInfo(tokenA)
+
+            // process.exit()
+            let unitTokenA = Math.pow(10, decimals)
+
+            // TODO: CONSTRUCT PATH TO ENSURE THAT POOLS EXIST AND HAVE LIQUIDITY
+            let path = [tokenA, tokenB]
+
+            let deadline = this.deadline
+
+            let _amountIn = BigNumber.from(`${unitTokenA * parseFloat(amount)}`)
+
+            let tokenBalance = await this.getTokenBalance(tokenA)
+            console.log(tokenBalance)
+            // process.exit()
+
+            if (tokenBalance! >= _amountIn) {
+                let amountIn = parseInt(_amountIn?._hex)
+
+                let _amountOutMin = await this.getAmountOutMin(_amountIn, path)
+                let amountOutMin = parseInt(_amountOutMin?._hex!)
+
+                console.log(
+                    `Sell amountIn: ${amountIn} \t Sell amountOutMin: ${amountOutMin} \n`
+                )
+
+                let overloads = {
+                    gasLimit: config.DEFAULT_GAS_LIMIT,
+                }
+
+                let _allowance = await this.getTokenAllowance(tokenA)
+
+                if (_allowance!.lt(_amountIn)) {
+                    try {
+                        let txResponse = await this.tokenContract(
+                            tokenA
+                        ).approve(
+                            config.ROUTERS.UNISWAPV2ROUTER02,
+                            config.MAX_INT
+                        )
+
+                        console.log(`Approving token => ${tokenA}`)
+                        await txResponse.wait()
+                        console.log('Approving done')
+                    } catch (error) {
+                        console.error(
+                            `Error approving token:${tokenA} \n`,
+                            error
+                        )
+                    }
+                }
+
+                let txResponse =
+                    await this.routerContract.swapExactTokensForTokens(
+                        amountIn,
+                        amountOutMin,
+                        path,
+                        to,
+                        deadline,
+                        overloads
+                    )
+                console.log(' ...... \t loading')
+                let tx = await txResponse.wait()
+
+                if (tx && tx.status == 1) {
+                    console.info(
+                        '----'.repeat(20),
+                        '\n',
+                        `SWAP SUCCESSFUL \t ${tx.transactionHash} \n`,
+                        '----'.repeat(20)
+                    )
+                } else {
+                    console.info(
+                        '----'.repeat(20),
+                        '\n',
+                        `SWAP FAILED \t ${tx.transactionHash} \n`,
+                        '----'.repeat(20)
+                    )
+                }
+            } else {
+                console.info(
+                    '----'.repeat(10),
+                    '\n',
+                    `Token balance is ${tokenBalance}, thus insufficient \n`,
+                    '----'.repeat(10)
+                )
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
 }
 
 export const swap = new Swap()

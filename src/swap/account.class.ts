@@ -4,7 +4,7 @@ import { abis } from '../utils'
 
 export class Account {
     provider: ethers.providers.JsonRpcProvider
-    private signer: Wallet
+    signer: Wallet
     toWallet: string
     deadline: number
     account: Wallet
