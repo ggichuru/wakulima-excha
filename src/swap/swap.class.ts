@@ -179,6 +179,12 @@ class Swap extends Helpers {
             // process.exit()
             let unitTokenA = Math.pow(10, decimals)
 
+            // Check Pair reserves
+            let { pairAddress, reserves } = await this.getPair(tokenA, tokenB)
+
+            if (parseInt(reserves) == 0) {
+                throw new Error("Pool doesn't have liquidity")
+            }
             // TODO: CONSTRUCT PATH TO ENSURE THAT POOLS EXIST AND HAVE LIQUIDITY
             let path = [tokenA, tokenB]
 
