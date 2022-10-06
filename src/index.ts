@@ -22,6 +22,9 @@ const main = async () => {
 
     // let bal = await swap.getTokenBalance(USDC)
     // console.log(bal?.toString())
+
+    let f = await swap.getPair(UNI, ETH)
+    console.log(f)
 }
 
 main()

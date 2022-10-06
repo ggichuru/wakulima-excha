@@ -63,5 +63,47 @@ export class Helpers extends Account {
         }
     }
 
-    public async checkPathExist(tokenA: string, tokenB: string) {}
+    public async getPair(tokenA: string, tokenB: string) {
+        try {
+            // Get factory contract address
+            let factory = await this.routerContract.factory()
+
+            // Init a factory contract instance
+            let factoryContract = new Contract(
+                factory,
+                abis.UniswapV2Factory.abi,
+                this.account
+            )
+
+            let pairAddress = await factoryContract.getPair(tokenA, tokenB)
+
+            if (pairAddress == this.zeroAddress) {
+                console.log('!!! PAIR DOES NOT EXIST')
+                // Create pair with weth
+                let tx = await factoryContract.createPair(tokenA, tokenB)
+
+                console.log(`\t.... creating PAIR for ${tokenA} and ${tokenB}`)
+                await tx.wait()
+            }
+
+            // Create an instance of UniswapV2Pair contract
+            let pairContract = new Contract(
+                pairAddress,
+                abis.UniswapV2Pair.abi,
+                this.account
+            )
+
+            let reserves = await pairContract.getReserves()
+
+            return {
+                pairAddress,
+                reserves: reserves[0].toString(),
+            }
+        } catch (error) {
+            // console.log(error)
+            return {
+                error,
+            }
+        }
+    }
 }

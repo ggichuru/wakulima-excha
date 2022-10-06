@@ -9,7 +9,7 @@ export class Account {
     deadline: number
     account: Wallet
     routerContract: Contract
-    // tokenContract: Contract
+    zeroAddress: string
 
     constructor() {
         // define the provider
@@ -32,6 +32,8 @@ export class Account {
             abis.UniswapV2Router02.abi,
             this.account
         )
+
+        this.zeroAddress = '0x0000000000000000000000000000000000000000'
 
         // this.tokenContract = new Contract(
         //     config.TOKENS.WETH,
