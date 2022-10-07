@@ -1,4 +1,4 @@
-import { swap } from './swap/swap.class'
+import { swapClass } from './swap/swap.class'
 import { BigNumber } from 'ethers'
 
 const main = async () => {

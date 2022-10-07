@@ -273,4 +273,4 @@ class Swap extends Helpers {
     }
 }
 
-export const swap = new Swap()
+export const swapClass = new Swap()
