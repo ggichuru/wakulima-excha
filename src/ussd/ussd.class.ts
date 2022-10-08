@@ -63,22 +63,35 @@ export class UssdClass {
             await this.menu.state('tokenPage', {
                 run: async () => {
                     let token = this.menu.val
-                    // let session = this.menu.session(this.menu.args.sessionId)
-                    // session.set('name', name)
+
                     let _token = await this.getTokenDetails(token)
 
-                    if (_token) {
-                        this.menu.con(
-                            `TOKEN: ${_token.name} \nBAL: ${_token.balance} ${_token.symbol} \n` +
-                                `\n [ swap actions ] ` +
-                                `\n1. Swap ${_token.symbol} for ETH` +
-                                `\n2. Swap ETH for ${_token.symbol}` +
-                                `\n3. Swap ${_token.symbol} for Token of choice \n` +
-                                `\n0: Exit  00: Back`
-                        )
-                    } else {
-                        this.menu.con('Invalid Token address. Try again')
-                    }
+                    await this.menu.session
+                        .set('tokenAddr', token)
+                        .then(async () => {
+                            if (_token) {
+                                console.log(
+                                    'TOKEN ADDRESS @ TOKEN PAGE',
+                                    await this.menu.session.get('tokenAddr')
+                                )
+                                await this.menu.con(
+                                    `TOKEN: ${_token!.name} \nBAL: ${
+                                        _token!.balance
+                                    } ${_token!.symbol} \n` +
+                                        `\n [ swap actions ] ` +
+                                        `\n1. Swap ${_token!.symbol} for ETH` +
+                                        `\n2. Swap ETH for ${_token!.symbol}` +
+                                        `\n3. Swap ${
+                                            _token!.symbol
+                                        } for Token of choice \n` +
+                                        `\n0: Exit  00: Back`
+                                )
+                            } else {
+                                this.menu.con(
+                                    'Invalid Token address. Try again'
+                                )
+                            }
+                        })
                 },
                 next: {
                     '1': 'tokenPage.swapTokensForEth',
@@ -97,9 +110,14 @@ export class UssdClass {
     private async defineSwapTokensStates() {
         try {
             await this.menu.state('tokenPage.swapTokensForEth', {
+                //TODO: FIX GET SESSION ISSUE
                 run: async () => {
-                    let session = this.menu
-                    this.menu.end('swapTokensForEth')
+                    await this.menu.session
+                        .get('tokenAddr')
+                        .then((value: string) => {
+                            console.log('TOKEN ADDRESS @ SWAP', value)
+                            this.menu.con(`enter amount,`)
+                        })
                 },
             })
             await this.menu.state('tokenPage.swapEthForTokens', {
@@ -139,35 +157,28 @@ export class UssdClass {
     }
 
     private async configureSession() {
-        this.menu.sessionConfig({
-            start: (sessionId) => {
-                // Initiailize current session if it doesnt exist. This is called by menu.run()
-                return new Promise((resolve, reject) => {
-                    if (!(sessionId in this.sessions))
-                        this.sessions[sessionId] = {}
-                    resolve(200)
-                })
+        await this.menu.sessionConfig({
+            start: (sessionId, callback = () => {}) => {
+                // initialize current session if it doesn't exist
+                // this is called by menu.run()
+                if (!(sessionId in this.sessions)) this.sessions[sessionId] = {}
+                callback()
             },
-            end: (sessionId) => {
-                // used to delete current session. Invoked internally by the menu.end()
-                return new Promise((resolve, reject) => {
-                    delete this.sessions[sessionId]
-                    resolve(200)
-                })
+            end: (sessionId, callback = () => {}) => {
+                // clear current session
+                // this is called by menu.end()
+                delete this.sessions[sessionId]
+                callback()
             },
-            set: (sessionId, key, value) => {
-                // store key-value pair in current sesssion
-                return new Promise((resolve, reject) => {
-                    this.sessions[sessionId][key] = value
-                    resolve(value)
-                })
+            set: (sessionId, key, value, callback = () => {}) => {
+                // store key-value pair in current session
+                this.sessions[sessionId][key] = value
+                callback()
             },
-            get: (sessionId, key) => {
-                // Retrive value by key in current session
-                return new Promise((resolve, reject) => {
-                    let value = this.sessions[sessionId][key]
-                    resolve(value)
-                })
+            get: (sessionId, key, callback = () => {}) => {
+                // retrieve value by key in current session
+                let value = this.sessions[sessionId][key]
+                callback(null, value)
             },
         })
     }
