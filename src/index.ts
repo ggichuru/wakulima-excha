@@ -1,5 +1,6 @@
 import { swapClass } from './swap/swap.class'
 import { BigNumber } from 'ethers'
+import { swapWrapper } from './swap/Swap'
 
 const main = async () => {
     console.log('----'.repeat(10), '\n', 'BAZENGA DADI \n', '----'.repeat(10))
@@ -25,6 +26,9 @@ const main = async () => {
 
     // let f = await swap.getPair(UNI, ETH)
     // console.log(f)
+
+    let _s = await swapWrapper.swapTokens(UNI, ETH, to, '0.01')
+    console.log(_s)
 }
 
 main()

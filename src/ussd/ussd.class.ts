@@ -111,13 +111,17 @@ export class UssdClass {
         try {
             await this.menu.state('tokenPage.swapTokensForEth', {
                 //TODO: FIX GET SESSION ISSUE
+
                 run: async () => {
-                    await this.menu.session
-                        .get('tokenAddr')
-                        .then((value: string) => {
-                            console.log('TOKEN ADDRESS @ SWAP', value)
-                            this.menu.con(`enter amount,`)
-                        })
+                    let token = this.menu.args.text.split('*')
+                    this.menu.con(`enter amount,`)
+                    console.log('TOKEN ADDRESS @ SWAP', token[1])
+                    let swap = await swapClass.executeBuy(
+                        token[1],
+                        this.menu.val
+                    )
+
+                    console.log(swap)
                 },
             })
             await this.menu.state('tokenPage.swapEthForTokens', {

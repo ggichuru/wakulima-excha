@@ -46,7 +46,7 @@ export class Helpers extends Account {
     }
 
     public tokenContract(tokenAddress: string) {
-        return new Contract(tokenAddress, abis.Erc20.abi, this.provider)
+        return new Contract(tokenAddress, abis.Erc20.abi, this.account)
     }
 
     public async getTokenInfo(tokenAddress: string) {
