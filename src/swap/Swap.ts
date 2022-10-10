@@ -6,7 +6,6 @@ export class SwapWrapper extends Helpers {
     public async swapTokens(
         tokenA: string,
         tokenB: string,
-        to: string,
         amount: string
     ) {
         try {
@@ -81,7 +80,7 @@ export class SwapWrapper extends Helpers {
                         _amountIn,
                         _amountOutMin,
                         path,
-                        to,
+                        this.toWallet,
                         deadline,
                         overloads
                     )

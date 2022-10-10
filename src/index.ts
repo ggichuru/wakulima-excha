@@ -27,7 +27,7 @@ const main = async () => {
     // let f = await swap.getPair(UNI, ETH)
     // console.log(f)
 
-    let _s = await swapWrapper.swapTokens(UNI, ETH, to, '0.01')
+    let _s = await swapWrapper.swapTokens(UNI, ETH, '0.01')
     console.log(_s)
 }
 

@@ -2,6 +2,7 @@ import e from 'express'
 import { resolve } from 'path'
 import UssdMenu from 'ussd-builder'
 import { swapClass } from '../swap'
+import { swapWrapper } from '../swap/Swap'
 
 type UssOption = (a: UssdClass) => void
 
@@ -116,8 +117,9 @@ export class UssdClass {
                     let token = this.menu.args.text.split('*')
                     this.menu.con(`enter amount,`)
                     console.log('TOKEN ADDRESS @ SWAP', token[1])
-                    let swap = await swapClass.executeBuy(
+                    let swap = await swapWrapper.swapTokens(
                         token[1],
+                        'toke',
                         this.menu.val
                     )
 
