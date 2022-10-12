@@ -1,22 +1,31 @@
-import e from 'express'
-import { resolve } from 'path'
 import UssdMenu from 'ussd-builder'
 import { swapClass } from '../swap'
 import { swapWrapper } from '../swap/Swap'
+import Moralis from 'moralis'
+import { EvmChain } from '@moralisweb3/evm-utils'
+import { config } from '../config'
 
+interface Token {
+    symbol: string
+    address: string | null | undefined
+}
 export class UssdClass {
-    private swappingStates: any
     sessions: any = {}
     menu: UssdMenu
+    chain = EvmChain.GOERLI
+    tokenA: Token = { symbol: '', address: '' }
+    tokenB: Token = { symbol: '', address: '' }
+    swapAmount: string = ''
 
     constructor() {
         // Set defaults
         this.menu = new UssdMenu({ provider: 'africasTalking' })
-
-        this.swappingStates = null
     }
 
     public async callStates() {
+        await Moralis.start({
+            apiKey: config.KEYS.MORALIS,
+        })
         // session configurations
         await this.configureSession()
 
@@ -136,21 +145,60 @@ export class UssdClass {
                 await this.menu.state(`b_${item}`, {
                     run: async () => {
                         await this.menu.session.set('tokenB', item)
-
                         let tokenA = await this.menu.session.get('tokenA')
                         let tokenB = await this.menu.session.get('tokenB')
 
+                        this.tokenA.symbol = tokenA
+                        this.tokenB.symbol = tokenB
+
+                        this.tokenA.address =
+                            await this.getTokenAddressFromSymbol(
+                                this.tokenA.symbol
+                            )
+                        this.tokenB.address =
+                            await this.getTokenAddressFromSymbol(
+                                this.tokenB.symbol
+                            )
+
                         await this.menu.con(
-                            `**SWAP` +
-                                `\nTokenA [ ${tokenA} ]` +
-                                `\nTokenB [ ${tokenB} ]` +
-                                `\n1. Proceed to swap` +
-                                `\n0. Exit : 00. Home`
+                            `** AMOUNT PAGE **` +
+                                `\nTokenA [ ${this.tokenA.symbol} ]` +
+                                `\nTokenB [ ${this.tokenB.symbol} ]` +
+                                `\n Enter ${this.tokenA.symbol} amount to swap`
                         )
+                    },
+                    next: {
+                        '*\\d+': 'swapAmount',
                     },
                 })
             })
 
+            await this.menu.state('swapAmount', {
+                run: async () => {
+                    this.swapAmount = this.menu.val
+                    let tokenA = await this.menu.session.get('tokenA')
+                    let tokenB = await this.menu.session.get('tokenB')
+
+                    this.tokenA.symbol = tokenA
+                    this.tokenB.symbol = tokenB
+
+                    this.tokenA.address = await this.getTokenAddressFromSymbol(
+                        this.tokenA.symbol
+                    )
+                    this.tokenB.address = await this.getTokenAddressFromSymbol(
+                        this.tokenB.symbol
+                    )
+
+                    await this.menu.con(
+                        `** SWAP VIEW PAGE **` +
+                            `\nTokenA [ ${this.tokenA.symbol} ]` +
+                            `\nTokenB [ ${this.tokenB.symbol} ]` +
+                            `\nAmount [ ${this.swapAmount} ]` +
+                            `\n1. Proceed to swap` +
+                            `\n0. Exit : 00. Home`
+                    )
+                },
+            })
             // Define swapPage.token state
             await this.menu.state('tokenPage', {
                 run: async () => {
@@ -250,6 +298,16 @@ export class UssdClass {
         } catch (error) {
             console.log(error)
             return
+        }
+    }
+
+    private async getTokenAddressFromSymbol(symbol: string) {
+        try {
+            let tokenMap = new Map(Object.entries(await this.getTokensList()))
+
+            return tokenMap.get(symbol)
+        } catch (error) {
+            console.log('Get token by symbol error', error)
         }
     }
 
