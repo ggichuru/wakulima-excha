@@ -4,27 +4,16 @@ import UssdMenu from 'ussd-builder'
 import { swapClass } from '../swap'
 import { swapWrapper } from '../swap/Swap'
 
-type UssOption = (a: UssdClass) => void
-
 export class UssdClass {
     private swappingStates: any
     sessions: any = {}
     menu: UssdMenu
 
-    swapTokens = new Map()
-
-    constructor(...options: UssOption[]) {
+    constructor() {
         // Set defaults
         this.menu = new UssdMenu({ provider: 'africasTalking' })
 
         this.swappingStates = null
-
-        // Set options
-        // for (const option of options) {
-        //     option(this)
-        // }
-
-        console.log('ANYTG')
     }
 
     public async callStates() {
@@ -131,16 +120,10 @@ export class UssdClass {
             menu.forEach(async (item: string, index: string) => {
                 await this.menu.state(`a_${item}`, {
                     run: async () => {
-                        await this.swapTokens.set(this.menu.args.sessionId, {
-                            tokenA: item,
-                        })
-                        console.log('A', this.swapTokens)
+                        await this.menu.session.set('tokenA', item)
 
                         await this.menu.con(
-                            `TokenA [ ${
-                                this.swapTokens.get(this.menu.args.sessionId)
-                                    .tokenA
-                            } ] select TokenB` +
+                            `TokenA [ ${item} ] select TokenB` +
                                 `${menu_items.toString()}` +
                                 `\n0. Exit : 00. Home`
                         )
@@ -152,24 +135,15 @@ export class UssdClass {
             menu.forEach(async (item: string, index: string) => {
                 await this.menu.state(`b_${item}`, {
                     run: async () => {
-                        await this.swapTokens.set(this.menu.args.sessionId, {
-                            ...this.swapTokens.get(this.menu.args.sessionId),
-                            tokenB: item,
-                        })
-                        console.log('B', this.swapTokens)
+                        await this.menu.session.set('tokenB', item)
+
+                        let tokenA = await this.menu.session.get('tokenA')
+                        let tokenB = await this.menu.session.get('tokenB')
 
                         await this.menu.con(
                             `**SWAP` +
-                                `\nTokenA [ ${
-                                    this.swapTokens.get(
-                                        this.menu.args.sessionId
-                                    ).tokenA
-                                } ]` +
-                                `\nTokenB [ ${
-                                    this.swapTokens.get(
-                                        this.menu.args.sessionId
-                                    ).tokenB
-                                } ]` +
+                                `\nTokenA [ ${tokenA} ]` +
+                                `\nTokenB [ ${tokenB} ]` +
                                 `\n1. Proceed to swap` +
                                 `\n0. Exit : 00. Home`
                         )
@@ -305,22 +279,6 @@ export class UssdClass {
             },
         })
     }
-
-    // public static async initSwappingStates(): Promise<UssOption> {
-    //     return async (ussd: UssdClass): Promise<void> => {
-    //         // session configurations
-    //         ussd.configureSession()
-
-    //         // Define initialization and exit states
-    //         ussd.defineStartState()
-    //         ussd.defineExitState()
-
-    //         // OTHER STATES
-    //         ussd.defineWalletPageState()
-    //         ussd.defineSwapPageState()
-    //         ussd.defineSwapTokensStates()
-    //     }
-    // }
 }
 
 export const ussdClass = new UssdClass()
