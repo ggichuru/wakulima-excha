@@ -2,6 +2,7 @@ import { BigNumber, Contract } from 'ethers'
 import { config } from '../config'
 import { abis } from '../utils'
 import { Account } from './account.class'
+import axios from 'axios'
 
 export class Helpers extends Account {
     public async getAmountOutMin(
@@ -104,6 +105,28 @@ export class Helpers extends Account {
             return {
                 error,
             }
+        }
+    }
+
+    public async getWalletBalance() {
+        try {
+            let response = await axios({
+                method: 'get',
+                url: config.ETHERSCAN.GOERLI,
+                params: {
+                    module: 'account',
+                    action: 'balance',
+                    address: this.toWallet,
+                    tag: 'latest',
+                    apikey: config.KEYS.ETHERSCAN,
+                },
+            })
+
+            let _balance = response.data.result
+
+            console.log(response.data)
+        } catch (error) {
+            console.error('Error getting wallet balance: => ', error)
         }
     }
 }

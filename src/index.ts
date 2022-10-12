@@ -27,8 +27,11 @@ const main = async () => {
     // let f = await swap.getPair(UNI, ETH)
     // console.log(f)
 
-    let _s = await swapWrapper.swapTokens(UNI, ETH, '0.01')
-    console.log(_s)
+    // let _s = await swapWrapper.swapTokens(UNI, ETH, '0.01')
+    // console.log(_s)
+
+    let bal = await swapWrapper.getWalletBalance()
+    console.log(bal)
 }
 
 main()

@@ -27,14 +27,16 @@ export class UssdClass {
         return this.menu.startState({
             run: () => {
                 this.menu.con(
-                    `Welcome to MARAFUND SWAP.` +
-                        `\n1. Continue to Swap` +
-                        '\n2. Exit'
+                    `Welcome to WAKULIMA EXCHANGE.` +
+                        `\n1. Wallet` +
+                        `\n2. Swap` +
+                        '\n0. Exit'
                 )
             },
             next: {
-                '1': 'swapPage',
-                '2': 'exit',
+                '1': 'walletPage',
+                '2': 'swapPage',
+                '0': 'exit',
             },
         })
     }
@@ -49,15 +51,76 @@ export class UssdClass {
         })
     }
 
-    private async defineSwapPageState() {
+    private async getTokensList() {
+        return {
+            ETH: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+            UNI: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+            USDC: '0x07865c6E87B9F70255377e024ace6630C1Eaa37F',
+        }
+    }
+
+    private async defineWalletPageState() {
         try {
-            await this.menu.state('swapPage', {
+            let addr = await swapClass.toWallet
+
+            await this.menu.state('walletPage', {
                 run: () => {
-                    this.menu.con(`Enter Token Address to Swap`)
+                    this.menu.con(
+                        `${addr}` +
+                            `\n1. View Balance.` +
+                            `\n2. View Tokens` +
+                            `\n0. Exit : 00. Home`
+                    )
                 },
                 next: {
-                    '*[a-zA-Z0-9]+': 'tokenPage',
+                    '1': 'viewBalance',
+                    '2': 'viewTokens',
+                    '0': 'exit',
+                    '00': 'home',
                 },
+            })
+        } catch (error) {
+            console.error('Wallet page state ', error)
+        }
+    }
+
+    private async defineSwapPageState() {
+        try {
+            let tokens = Object.entries(await this.getTokensList())
+
+            let menu_items: any = []
+            let menu: any = []
+            let next: { [key: string]: string } = {}
+
+            tokens!.forEach((t: any, i: number) => {
+                menu_items.push(`\n${i + 1}. ${t[0]}`)
+                menu.push(`${t[0]}`)
+                next[`${i + 1}`] = `${t[0].replace(/\s/g, ',')}`
+            })
+            await this.menu.state('swapPage', {
+                run: () => {
+                    this.menu.con(
+                        `Select TokenA: ` +
+                            `${menu_items.toString()}` +
+                            `\n0. Exit : 00. Home`
+                    )
+                },
+                next,
+            })
+
+            menu.forEach(async (item: string, index: string) => {
+                for (const [key, value] of tokens) {
+                    if (key == item) {
+                        // console.log(
+                        //     `the Item ${item} at index ${index} has a value of ${value}, with a key of ${key}`
+                        // )
+                        await this.menu.state(`${item}`, {
+                            run: async () => {
+                                this.menu.con(item)
+                            },
+                        })
+                    }
+                }
             })
 
             // Define swapPage.token state
@@ -199,6 +262,7 @@ export class UssdClass {
             ussd.defineExitState()
 
             // OTHER STATES
+            ussd.defineWalletPageState()
             ussd.defineSwapPageState()
             ussd.defineSwapTokensStates()
         }
