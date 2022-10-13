@@ -3,11 +3,7 @@ import { config } from '../config'
 import { Helpers } from './helpers.class'
 
 export class SwapWrapper extends Helpers {
-    public async swapTokens(
-        tokenA: string,
-        tokenB: string,
-        amount: string
-    ) {
+    public async swapTokens(tokenA: string, tokenB: string, amount: string) {
         try {
             let _tokenA = await this.getTokenInfo(tokenA)
             let _tokenB = await this.getTokenInfo(tokenB)
@@ -111,7 +107,7 @@ export class SwapWrapper extends Helpers {
                 )
             }
         } catch (error: any) {
-            throw new Error(error)
+            console.log(error)
         }
     }
 }

@@ -4,6 +4,7 @@ import { swapWrapper } from '../swap/Swap'
 import Moralis from 'moralis'
 import { EvmChain } from '@moralisweb3/evm-utils'
 import { config } from '../config'
+import { BigNumber } from 'ethers'
 
 interface Token {
     symbol: string
@@ -115,6 +116,7 @@ export class UssdClass {
                 nextA[`${i + 1}`] = `a_${t[0].replace(/\this.s/g, ',')}`
                 nextB[`${i + 1}`] = `b_${t[0].replace(/\this.s/g, ',')}`
             })
+
             await this.menu.state('swapPage', {
                 run: () => {
                     this.menu.con(
@@ -129,10 +131,31 @@ export class UssdClass {
             menu.forEach(async (item: string, index: string) => {
                 await this.menu.state(`a_${item}`, {
                     run: async () => {
+                        let _tokenABal: any
+                        let _tokenA: any
+
                         await this.menu.session.set('tokenA', item)
+
+                        try {
+                            this.tokenA.address =
+                                await this.getTokenAddressFromSymbol(item)
+
+                            _tokenA = await swapClass.getTokenInfo(
+                                this.tokenA.address!
+                            )
+
+                            _tokenABal = await swapClass.getTokenBalance(
+                                this.tokenA.address!
+                            )
+                        } catch (error) {
+                            console.log(error)
+                        }
+                        let unitTokenA = Math.pow(10, _tokenA.decimals)
+                        let actualBal = parseInt(_tokenABal?._hex!) / unitTokenA
 
                         await this.menu.con(
                             `TokenA [ ${item} ] select TokenB` +
+                                `\n BAL = [ ${actualBal.toFixed(4)} ${item} ]` +
                                 `${menu_items.toString()}` +
                                 `\n0. Exit : 00. Home`
                         )
@@ -144,28 +167,41 @@ export class UssdClass {
             menu.forEach(async (item: string, index: string) => {
                 await this.menu.state(`b_${item}`, {
                     run: async () => {
-                        await this.menu.session.set('tokenB', item)
-                        let tokenA = await this.menu.session.get('tokenA')
-                        let tokenB = await this.menu.session.get('tokenB')
+                        try {
+                            await this.menu.session.set('tokenB', item)
+                            let tokenA = await this.menu.session.get('tokenA')
+                            let tokenB = await this.menu.session.get('tokenB')
 
-                        this.tokenA.symbol = tokenA
-                        this.tokenB.symbol = tokenB
+                            this.tokenA.symbol = tokenA
+                            this.tokenB.symbol = tokenB
 
-                        this.tokenA.address =
-                            await this.getTokenAddressFromSymbol(
-                                this.tokenA.symbol
+                            this.tokenA.address =
+                                await this.getTokenAddressFromSymbol(
+                                    this.tokenA.symbol
+                                )
+
+                            this.tokenB.address =
+                                await this.getTokenAddressFromSymbol(
+                                    this.tokenB.symbol
+                                )
+
+                            if (tokenA == tokenB) {
+                                await this.menu.con(
+                                    `** SWAP VIEW PAGE ERROR**` +
+                                        `\n Can't Swap ${tokenA} to ${tokenB}` +
+                                        `\n0: back | 1: exit`
+                                )
+                            }
+
+                            await this.menu.con(
+                                `** AMOUNT PAGE **` +
+                                    `\nTokenA [ ${this.tokenA.symbol} ]` +
+                                    `\nTokenB [ ${this.tokenB.symbol} ]` +
+                                    `\n Enter ${this.tokenA.symbol} amount to swap`
                             )
-                        this.tokenB.address =
-                            await this.getTokenAddressFromSymbol(
-                                this.tokenB.symbol
-                            )
-
-                        await this.menu.con(
-                            `** AMOUNT PAGE **` +
-                                `\nTokenA [ ${this.tokenA.symbol} ]` +
-                                `\nTokenB [ ${this.tokenB.symbol} ]` +
-                                `\n Enter ${this.tokenA.symbol} amount to swap`
-                        )
+                        } catch (error) {
+                            console.log(error)
+                        }
                     },
                     next: {
                         '*\\d+': 'swapAmount',
@@ -175,68 +211,61 @@ export class UssdClass {
 
             await this.menu.state('swapAmount', {
                 run: async () => {
-                    this.swapAmount = this.menu.val
-                    let tokenA = await this.menu.session.get('tokenA')
-                    let tokenB = await this.menu.session.get('tokenB')
+                    try {
+                        this.swapAmount = this.menu.val
 
-                    this.tokenA.symbol = tokenA
-                    this.tokenB.symbol = tokenB
+                        let _tokenA = await swapClass.getTokenInfo(
+                            this.tokenA.address!
+                        )
+                        let _tokenB = await swapClass.getTokenInfo(
+                            this.tokenA.address!
+                        )
+                        let _tokenABal: any
+                        _tokenABal = await swapClass.getTokenBalance(
+                            this.tokenA.address!
+                        )
 
-                    this.tokenA.address = await this.getTokenAddressFromSymbol(
-                        this.tokenA.symbol
-                    )
-                    this.tokenB.address = await this.getTokenAddressFromSymbol(
-                        this.tokenB.symbol
-                    )
+                        let unitTokenA = Math.pow(10, _tokenA.decimals)
+                        let unitTokenB = Math.pow(10, _tokenB.decimals)
 
-                    await this.menu.con(
-                        `** SWAP VIEW PAGE **` +
-                            `\nTokenA [ ${this.tokenA.symbol} ]` +
-                            `\nTokenB [ ${this.tokenB.symbol} ]` +
-                            `\nAmount [ ${this.swapAmount} ]` +
-                            `\n1. Proceed to swap` +
-                            `\n0. Exit : 00. Home`
-                    )
-                },
-            })
-            // Define swapPage.token state
-            await this.menu.state('tokenPage', {
-                run: async () => {
-                    let token = this.menu.val
+                        let _amountIn = BigNumber.from(
+                            `${unitTokenA * parseFloat(this.swapAmount)}`
+                        )
 
-                    let _token = await this.getTokenDetails(token)
+                        let _amountOutMin = await swapClass.getAmountOutMin(
+                            _amountIn,
+                            [this.tokenA.address!, this.tokenB.address!]
+                        )
 
-                    await this.menu.session
-                        .set('tokenAddr', token)
-                        .then(async () => {
-                            if (_token) {
-                                console.log(
-                                    'TOKEN ADDRESS @ TOKEN PAGE',
-                                    await this.menu.session.get('tokenAddr')
-                                )
-                                await this.menu.con(
-                                    `TOKEN: ${_token!.name} \nBAL: ${
-                                        _token!.balance
-                                    } ${_token!.symbol} \n` +
-                                        `\n [ swap actions ] ` +
-                                        `\n1. Swap ${_token!.symbol} for ETH` +
-                                        `\n2. Swap ETH for ${_token!.symbol}` +
-                                        `\n3. Swap ${
-                                            _token!.symbol
-                                        } for Token of choice \n` +
-                                        `\n0: Exit  00: Back`
-                                )
-                            } else {
-                                this.menu.con(
-                                    'Invalid Token address. Try again'
-                                )
-                            }
-                        })
+                        let amountOutMin = parseInt(_amountOutMin?._hex!)
+
+                        let actualBal = parseInt(_tokenABal?._hex!) / unitTokenA
+
+                        let expectedAmount = amountOutMin / unitTokenB
+
+                        if (actualBal < parseFloat(this.swapAmount)) {
+                            await this.menu.con(
+                                `** SWAP VIEW PAGE ERROR**` +
+                                    `\n |-ERR-| Insufficient balance |-ERR-| ` +
+                                    `\n[ ${actualBal.toFixed(4)} ${
+                                        this.tokenA.symbol
+                                    }] ` +
+                                    `\n0: back | 1: exit`
+                            )
+                        }
+                        await this.menu.con(
+                            `** SWAP VIEW PAGE **` +
+                                `\nSwap [${this.swapAmount}] [${this.tokenA.symbol}] for [${this.tokenB.symbol}]` +
+                                `\n1. Proceed to swap` +
+                                `\n0. Exit : 00. Home`
+                        )
+                    } catch (error) {
+                        console.log(error)
+                    }
                 },
                 next: {
-                    '1': 'tokenPage.swapTokensForEth',
-                    '2': 'tokenPage.swapEthForTokens',
-                    '3': 'tokenPage.swapTokensForTokens',
+                    '1': 'executeSwap',
+                    '0': 'exit',
                 },
             })
         } catch (error) {
@@ -249,20 +278,19 @@ export class UssdClass {
 
     private async defineSwapTokensStates() {
         try {
-            await this.menu.state('tokenPage.swapTokensForEth', {
-                //TODO: FIX GET SESSION ISSUE
-
+            await this.menu.state('executeSwap', {
                 run: async () => {
-                    let token = this.menu.args.text.split('*')
-                    this.menu.con(`enter amount,`)
-                    console.log('TOKEN ADDRESS @ SWAP', token[1])
-                    let swap = await swapWrapper.swapTokens(
-                        token[1],
-                        'toke',
-                        this.menu.val
+                    await this.menu.end(
+                        `SWAPPING ${this.swapAmount} ${this.tokenA.symbol} for ${this.tokenB.symbol}` +
+                            `\n check SMS (${this.menu.args.phoneNumber}) for TX Information`
+                    )
+                    await swapWrapper.swapTokens(
+                        this.tokenA.address!,
+                        this.tokenB.address!,
+                        this.swapAmount
                     )
 
-                    console.log(swap)
+                    //TODO: implement send to sms
                 },
             })
             await this.menu.state('tokenPage.swapEthForTokens', {
@@ -276,7 +304,7 @@ export class UssdClass {
                 },
             })
         } catch (error: any) {
-            throw new Error(error)
+            console.log(error)
         }
     }
 

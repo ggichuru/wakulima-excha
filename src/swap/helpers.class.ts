@@ -29,7 +29,7 @@ export class Helpers extends Account {
                 this.account.address
             )
         } catch (error) {
-            console.log('Get TokenBalance error \n', error)
+            console.error('Get TokenBalance error \n', error)
         }
     }
 
